@@ -144,6 +144,19 @@ webhook-signature: v1,<base64(HMAC-SHA256(key, signed-content))>
 
 > This differs from the native schemes in this fleet, which emit a second header (e.g. Inkwell's `X-Inkwell-Signature-Old`). Adopting Standard Webhooks means rotation moves from two headers to one multi-value header.
 
+### 4.5.1 Adoption is per-destination, never bulk
+
+A service offering `standard-webhooks` MUST treat scheme selection as
+per-destination configuration and MUST NOT provide a bulk migration.
+
+Rationale, learned in the first real adoption: Standard Webhooks secrets are
+base64 with a `whsec_` prefix and the HMAC key is the decoded bytes (§4.4).
+An existing secret in any other format cannot be reinterpreted, so switching a
+live destination requires **issuing a new secret and coordinating with whoever
+consumes it**. There is a human on the other end of every destination. A
+service's native scheme therefore remains the permanent default for
+already-existing destinations.
+
 ### 4.6 Verification
 
 A verifier MUST:
@@ -153,6 +166,12 @@ A verifier MUST:
 - Reject when `webhook-timestamp` falls outside an allowable tolerance of now, in either direction.
 
 The specification recommends a tolerance without fixing one. **This contract sets the default tolerance at 5 minutes**, configurable per consumer. That number is our choice, not the spec's.
+
+**A verifier MUST allow its clock to be supplied by the caller.** Discovered in
+the first adoption: an implementation that reads the wall clock directly cannot
+verify a message it signed at a frozen timestamp, which makes the tolerance
+check untestable for every consumer. Reading the process clock is the correct
+*default*, not the only option.
 
 ### 4.7 `webhook-id` is delivery-side, and is not `Idempotency-Key`
 
@@ -191,6 +210,18 @@ A conforming service accepting non-idempotent requests MUST support an `Idempote
 > **This is a behaviour change, deliberately chosen.** Measured 2026-08-05: Webhook Relay stores a request fingerprint and returns 409 on same-key/different-body. Switchyard has no fingerprint column and performs no conflict detection. Both already use 24-hour windows. This contract adopts Webhook Relay's semantics, which means **Switchyard gains a 409 path it does not have today**. That MUST appear in Switchyard's migration note and API documentation. It is not a refactor.
 
 ---
+
+### 6.1 Scheme-usage evidence
+
+A service supporting more than one signing scheme MUST record scheme usage
+**durably in its own datastore**, not in logs.
+
+Retiring a legacy scheme requires evidence of a quiet period — typically 30
+consecutive days with no traffic on it. Log retention on the hosts this fleet
+runs on is 30 days with a size cap, which is exactly the window the decision
+needs and therefore far too thin to be the evidence for it. A counter that
+begins the moment a second scheme becomes selectable cannot be truncated out
+from under the decision.
 
 ## 7. Event envelope
 
