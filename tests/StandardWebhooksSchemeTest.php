@@ -139,6 +139,24 @@ class StandardWebhooksSchemeTest extends TestCase
         ], '{}', $this->secret));
     }
 
+    public function test_the_clock_is_injectable_so_consumers_can_test(): void
+    {
+        // Found during Inkwell adoption (plan G-4): a caller signing at a
+        // frozen timestamp could not verify its own output, because this class
+        // read the wall clock directly.
+        $frozen = 1768478400;
+        $scheme = new StandardWebhooksScheme(clock: static fn (): int => $frozen);
+
+        $payload = '{}';
+        $headers = $scheme->sign('msg_1', $payload, $this->secret);
+
+        $this->assertSame((string) $frozen, $headers['webhook-timestamp']);
+        $this->assertTrue($scheme->verify($headers, $payload, $this->secret));
+
+        // A verifier on the real clock rejects it — the tolerance still works.
+        $this->assertFalse((new StandardWebhooksScheme)->verify($headers, $payload, $this->secret));
+    }
+
     public function test_generated_secrets_carry_the_prefix(): void
     {
         $this->assertStringStartsWith('whsec_', StandardWebhooksScheme::generateSecret());

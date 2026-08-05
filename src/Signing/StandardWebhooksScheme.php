@@ -30,9 +30,26 @@ final class StandardWebhooksScheme implements SignatureScheme
     /** The spec recommends a tolerance without fixing one; 5 minutes is our default. */
     public const DEFAULT_TOLERANCE_SECONDS = 300;
 
+    /** @var callable(): int */
+    private $clock;
+
+    /**
+     * @param  (callable(): int)|null  $clock  injectable so a consumer can test
+     *   verification under a frozen clock. Found during the first real
+     *   adoption: a caller that signs at a frozen timestamp cannot verify its
+     *   own output if this class reads the wall clock directly.
+     */
     public function __construct(
         private readonly int $toleranceSeconds = self::DEFAULT_TOLERANCE_SECONDS,
-    ) {}
+        ?callable $clock = null,
+    ) {
+        $this->clock = $clock ?? static fn (): int => time();
+    }
+
+    public function now(): int
+    {
+        return ($this->clock)();
+    }
 
     public function name(): string
     {
@@ -45,7 +62,7 @@ final class StandardWebhooksScheme implements SignatureScheme
      */
     public function sign(string $messageId, string $payload, string $secret, ?int $timestamp = null): array
     {
-        $timestamp ??= time();
+        $timestamp ??= $this->now();
 
         return [
             'webhook-id' => $messageId,
@@ -63,7 +80,7 @@ final class StandardWebhooksScheme implements SignatureScheme
      */
     public function signWithRotation(string $messageId, string $payload, array $secrets, ?int $timestamp = null): array
     {
-        $timestamp ??= time();
+        $timestamp ??= $this->now();
 
         $signatures = array_map(
             fn (string $secret) => self::VERSION.','.$this->signature($messageId, $timestamp, $payload, $secret),
@@ -122,7 +139,7 @@ final class StandardWebhooksScheme implements SignatureScheme
 
     public function withinTolerance(int $timestamp): bool
     {
-        return abs(time() - $timestamp) <= $this->toleranceSeconds;
+        return abs($this->now() - $timestamp) <= $this->toleranceSeconds;
     }
 
     private function signature(string $messageId, int $timestamp, string $payload, string $secret): string
