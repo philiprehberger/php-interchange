@@ -45,6 +45,10 @@ interface ConformanceHarness
      */
     public function dispatchTracedJob(): void;
 
-    /** Scheme names this service can currently sign with. */
+    /**
+     * Scheme names this service can currently sign with.
+     *
+     * @return array<int, string>
+     */
     public function supportedSchemes(): array;
 }

@@ -23,7 +23,7 @@ interface IdempotencyStore
 {
     /**
      * @return IdempotencyResult one of: fresh (proceed), replay (return the
-     *   cached response), or conflict (409 — same key, different body)
+     *                           cached response), or conflict (409 — same key, different body)
      */
     public function begin(string $scope, string $key, string $requestBody): IdempotencyResult;
 

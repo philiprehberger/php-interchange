@@ -6,6 +6,7 @@ namespace PhilipRehberger\Interchange\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PhilipRehberger\Interchange\Idempotency\EloquentIdempotencyStore;
 
@@ -96,7 +97,7 @@ class IdempotencyStoreTest extends TestCase
         $this->store->begin('ws_1', 'key_1', '{"a":1}');
         $this->store->complete('ws_1', 'key_1', 201, '{}');
 
-        \Illuminate\Support\Facades\DB::table('interchange_idempotency')
+        DB::table('interchange_idempotency')
             ->where('key', 'key_1')
             ->update(['expires_at' => now()->subDay()]);
 
@@ -108,11 +109,11 @@ class IdempotencyStoreTest extends TestCase
         $this->store->begin('ws_1', 'live', '{}');
         $this->store->begin('ws_1', 'stale', '{}');
 
-        \Illuminate\Support\Facades\DB::table('interchange_idempotency')
+        DB::table('interchange_idempotency')
             ->where('key', 'stale')
             ->update(['expires_at' => now()->subDay()]);
 
         $this->assertSame(1, $this->store->prune());
-        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('interchange_idempotency')->count());
+        $this->assertSame(1, DB::table('interchange_idempotency')->count());
     }
 }

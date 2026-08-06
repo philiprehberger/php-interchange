@@ -29,8 +29,8 @@ final class StripeStyleScheme implements SignatureScheme
      * @param  string  $name  scheme name, e.g. `inkwell-v0`
      * @param  string  $header  header this service signs into
      * @param  string|null  $rotationHeader  second header used during rotation,
-     *   if the native scheme rotates that way. Standard Webhooks uses one
-     *   multi-value header instead; these older schemes predate that.
+     *                                       if the native scheme rotates that way. Standard Webhooks uses one
+     *                                       multi-value header instead; these older schemes predate that.
      * @param  (callable(): int)|null  $clock
      */
     public function __construct(
@@ -78,7 +78,10 @@ final class StripeStyleScheme implements SignatureScheme
         return [$this->header => 't='.$timestamp.',v1='.$this->hmac($timestamp, $payload, $secret)];
     }
 
-    /** @param array<int, string> $secrets current first, then outgoing */
+    /**
+     * @param  array<int, string>  $secrets  current first, then outgoing
+     * @return array<string, string>
+     */
     public function signWithRotation(string $messageId, string $payload, array $secrets, ?int $timestamp = null): array
     {
         $timestamp ??= ($this->clock)();

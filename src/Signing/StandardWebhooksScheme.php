@@ -35,9 +35,9 @@ final class StandardWebhooksScheme implements SignatureScheme
 
     /**
      * @param  (callable(): int)|null  $clock  injectable so a consumer can test
-     *   verification under a frozen clock. Found during the first real
-     *   adoption: a caller that signs at a frozen timestamp cannot verify its
-     *   own output if this class reads the wall clock directly.
+     *                                         verification under a frozen clock. Found during the first real
+     *                                         adoption: a caller that signs at a frozen timestamp cannot verify its
+     *                                         own output if this class reads the wall clock directly.
      */
     public function __construct(
         private readonly int $toleranceSeconds = self::DEFAULT_TOLERANCE_SECONDS,

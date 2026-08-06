@@ -20,6 +20,7 @@ namespace PhilipRehberger\Interchange\Events;
  */
 final readonly class EventEnvelope
 {
+    /** @param array<string, mixed> $data */
     public function __construct(
         public string $id,
         public string $type,
@@ -31,7 +32,7 @@ final readonly class EventEnvelope
 
     /**
      * @param  array<string, string>  $fieldMap  override names a service already uses,
-     *   e.g. ['data' => 'payload'] for Webhook Relay
+     *                                           e.g. ['data' => 'payload'] for Webhook Relay
      * @return array<string, mixed>
      */
     public function toArray(array $fieldMap = []): array
@@ -56,7 +57,11 @@ final readonly class EventEnvelope
         return $out;
     }
 
-    /** An event caused by this one — a retry, a replay, a downstream effect. */
+    /**
+     * An event caused by this one — a retry, a replay, a downstream effect.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function causing(string $id, string $type, array $data, ?string $time = null): self
     {
         return new self(

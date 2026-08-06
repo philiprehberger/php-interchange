@@ -47,6 +47,7 @@ final class ProblemDetails implements \JsonSerializable
         return $out + $this->extensions;
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return $this->toArray();
